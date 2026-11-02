@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laundry GO - Pilih Mesin</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
+    min-height: 100vh;
+    padding: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .container {
+    background: white;
+    border-radius: 20px;
+    padding: 24px;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    margin: 16px 0;
+  }
+  .logo { text-align: center; margin-bottom: 20px; }
+  .logo h1 { color: #d32f2f; font-size: 28px; letter-spacing: 2px; }
+  .logo p { color: #888; font-size: 12px; margin-top: 4px; }
+  .section { display: none; }
+  .section.active { display: block; }
+  h2 { color: #d32f2f; font-size: 18px; margin-bottom: 16px; text-align: center; }
+  .mesin-group { margin-bottom: 24px; }
+  .mesin-group h3 {
+    color: #333; font-size: 14px; margin-bottom: 10px; padding: 8px 12px;
+    background: #f5f5f5; border-radius: 6px; border-left: 4px solid #d32f2f;
+  }
+  .mesin-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .mesin-btn {
+    padding: 16px 12px; font-size: 15px; font-weight: bold;
+    border: 2px solid #ddd; border-radius: 10px; background: white;
+    color: #333; cursor: pointer; transition: 0.2s; text-align: center;
+  }
+  .mesin-btn:hover { border-color: #d32f2f; background: #fff5f5; }
+  .mesin-btn:active { transform: scale(0.97); }
+  .mesin-btn .harga { display: block; font-size: 12px; color: #d32f2f; margin-top: 4px; }
+  .mesin-btn:disabled { background: #f5f5f5; color: #bbb; border-color: #eee; cursor: not-allowed; text-decoration: line-through; }
+  .empty { text-align: center; padding: 40px 20px; color: #888; font-size: 14px; }
+  .loading { text-align: center; padding: 40px 20px; color: #888; }
+  .qr-section { text-align: center; }
+  .mesin-badge {
+    display: inline-block; background: #e8f5e9; color: #2e7d32;
+    padding: 8px 20px; border-radius: 20px; font-weight: bold; font-size: 16px; margin-bottom: 16px;
+  }
+  
+  .qr-wrapper { width: 100%; height: 450px; border: 2px solid #eee; border-radius: 12px; margin: 0 auto 16px; overflow: hidden; background: #fafafa; display: none; position: relative; }
+  .qr-wrapper iframe { width: 100%; height: 100%; border: none; }
+  
+  .nominal-box {
+    background: #fff8e1; border-left: 4px solid #ff9800; padding: 14px;
+    border-radius: 8px; margin: 16px 0; font-size: 14px; line-height: 1.6; text-align: left; display: none;
+  }
+  .nominal-box .label { color: #666; font-size: 13px; }
+  .nominal-box .nominal { font-size: 24px; font-weight: bold; color: #d32f2f; display: block; margin-top: 4px; }
+  .warning {
+    background: #ffebee; color: #c62828; padding: 12px; border-radius: 8px;
+    font-size: 13px; margin-top: 12px; font-weight: 600; text-align: left; display: none;
+  }
+  .countdown { text-align: center; font-size: 14px; color: #d32f2f; margin-top: 12px; font-weight: 600; display: none; }
+  
+  button.action-btn {
+    width: 100%; padding: 16px; font-size: 16px; font-weight: bold;
+    border: none; border-radius: 10px; cursor: pointer; transition: 0.2s;
+    background: #eee; color: #333; margin-top: 12px;
+  }
+  button.action-btn:hover { background: #ddd; }
+  .btn-buka-doku { background: #007bff; color: white; display: none; }
+  
+  .error-box { background: #ffebee; color: #c62828; padding: 12px; border-radius: 8px; font-size: 14px; margin-bottom: 16px; display: none; }
+  .error-box.show { display: block; }
+  .success-box { text-align: center; padding: 30px 20px; }
+  .success-box .icon { font-size: 60px; margin-bottom: 16px; }
+  .success-box h2 { color: #2e7d32; }
+  .success-box p { color: #666; margin-top: 12px; line-height: 1.6; }
+  .auto-return-info { color: #888; font-size: 13px; margin-top: 16px; }
+  .auto-return-info b { color: #d32f2f; font-size: 18px; }
+  .refresh-badge {
+    position: fixed; top: 8px; right: 8px; background: rgba(255,255,255,0.95);
+    color: #666; font-size: 11px; padding: 4px 8px; border-radius: 12px;
+    display: none; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+  .refresh-badge.show { display: block; }
+  .live-dot {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: #4caf50; margin-right: 4px; vertical-align: middle;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
+</style>
+</head>
+<body>
+<div class="refresh-badge" id="refreshBadge"><span class="live-dot"></span>update</div>
+<div class="container">
+  <div class="logo">
+    <h1>LAUNDRY GO</h1>
+    <p>Self Service Laundry</p>
+  </div>
+
+  <div id="sectionLoading" class="section active">
+    <div class="loading">Memuat daftar mesin...</div>
+  </div>
+
+  <div id="sectionPilih" class="section">
+    <div id="errorMsg" class="error-box"></div>
+    <h2>Pilih Mesin</h2>
+    <div id="mesinContainer"></div>
+  </div>
+
+  <div id="sectionBayar" class="section">
+    <div class="qr-section">
+      <h2>Scan untuk Bayar</h2>
+      <div class="mesin-badge" id="mesinDipilih">-</div>
+      
+      <div id="loadingQris" style="padding: 40px; font-weight:bold; color:#d32f2f;">
+        ⏳ Menghubungi Server Pembayaran...<br><br>
+        <span style="font-size:12px; font-weight:normal; color:#888;">Mohon tunggu sebentar.</span>
+      </div>
+
+      <div id="qrWrapper" class="qr-wrapper">
+        <iframe id="dokuIframe" src="" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+      </div>
+
+      <div id="qrError" class="error-box" style="margin-top:10px; display:none;"></div>
+      
+      <div class="nominal-box" id="nominalBox">
+        <span class="label">Total Pembayaran:</span>
+        <span class="nominal">Rp <span id="nominalBayar">0</span></span>
+        <hr style="border:none;border-top:1px dashed #ccc;margin:10px 0;">
+        <strong>Langkah:</strong><br>
+        1. Scan QRIS di atas (atau buka di tab baru)<br>
+        2. Bayar sesuai nominal<br>
+        3. Mesin menyala otomatis
+      </div>
+      <div class="warning" id="warningBox">
+        ⚠️ Jangan bayar dengan nominal berbeda.<br>
+        Mesin menyala otomatis setelah pembayaran sukses.
+      </div>
+      <div class="countdown" id="countdown"></div>
+      
+      <button class="action-btn btn-buka-doku" id="btnBukaDoku" onclick="bukaDiTabBaru()">Buka Halaman Pembayaran</button>
+      <button class="action-btn" id="btnBatal" onclick="resetKePilih()">Batal</button>
+    </div>
+  </div>
+
+  <div id="sectionSukses" class="section">
+    <div class="success-box">
+      <div class="icon">✅</div>
+      <h2>Berhasil!</h2>
+      <p>Mesin <strong id="mesinSukses">-</strong> sedang menyala.<br>Silakan masukkan cucian Anda.</p>
+      <div class="auto-return-info">
+        Kembali dalam <b id="autoCountdown">10</b> detik...
+      </div>
+      <button class="action-btn" onclick="resetKePilih()" style="background:#2e7d32;color:white;">Selesai</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==========================================
+// KONFIGURASI
+// ==========================================
+const WORKER_URL = "https://laundry-api-v2.laundrydaffa16.workers.dev";
+
+const BATAS_RESERVASI_DETIK = 300;
+const AUTO_RETURN_DETIK = 10;
+const REFRESH_INTERVAL_MS = 3000;
+
+let currentInvoice = null;
+let countdownInterval = null;
+let autoReturnInterval = null;
+let autoRefreshTimer = null;
+let pollingInterval = null;
+let lastMesinHash = "";
+let isRefreshing = false;
+let autoPilihDone = false;
+let dokuPaymentUrl = "";
+
+function buatHash(mesin) {
+  return mesin.map(m => m.mesinId).sort().join(",");
+}
+
+function tabTerlihat() {
+  return !document.hidden && document.visibilityState === "visible";
+}
+
+// ==========================================
+// 1. LOAD DAFTAR MESIN
+// ==========================================
+async function loadMesin(silent) {
+  if (isRefreshing) return;
+  isRefreshing = true;
+
+  try {
+    const res = await fetch(WORKER_URL + "?action=getMesinKosong&_=" + Date.now());
+    const mesin = await res.json();
+
+    const hashBaru = buatHash(mesin);
+    if (silent && hashBaru === lastMesinHash) {
+      isRefreshing = false;
+      return;
+    }
+    lastMesinHash = hashBaru;
+
+    if (silent) {
+      const badge = document.getElementById("refreshBadge");
+      badge.classList.add("show");
+      setTimeout(() => badge.classList.remove("show"), 400);
+    }
+
+    document.getElementById("sectionLoading").classList.remove("active");
+    document.getElementById("sectionPilih").classList.add("active");
+    const container = document.getElementById("mesinContainer");
+    container.innerHTML = "";
+
+    if (mesin.length === 0) {
+      container.innerHTML = '<div class="empty">😔 Tidak ada mesin kosong saat ini.<br>Silakan tunggu beberapa saat.</div>';
+      isRefreshing = false;
+      return;
+    }
+
+    const washers = mesin.filter(m => m.jenis === "WASHER");
+    const dryers = mesin.filter(m => m.jenis === "DRYER");
+    if (washers.length > 0) container.innerHTML += renderGroup("🧺 MESIN CUCI", washers);
+    if (dryers.length > 0) container.innerHTML += renderGroup("🌀 MESIN KERING", dryers);
+
+    document.querySelectorAll(".mesin-btn").forEach(btn => {
+      // Mengirim mesinId dan harga
+      btn.addEventListener("click", function() { 
+        pilihMesin(this.dataset.mesin, this.dataset.harga); 
+      });
+    });
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const mesinDariURL = urlParams.get('mesin');
+
+    if (mesinDariURL && !autoPilihDone) {
+      autoPilihDone = true; 
+      const targetBtn = document.querySelector(`.mesin-btn[data-mesin="${mesinDariURL}"]`);
+      if (targetBtn) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+        setTimeout(() => { targetBtn.click(); }, 500);
+      }
+    }
+
+  } catch (err) {
+    if (!silent) {
+      document.getElementById("sectionLoading").classList.remove("active");
+      document.getElementById("sectionPilih").classList.add("active");
+      document.getElementById("errorMsg").textContent = "❌ Gagal memuat: " + err.message;
+      document.getElementById("errorMsg").classList.add("show");
+    }
+  }
+  isRefreshing = false;
+}
+
+function renderGroup(title, list) {
+  let html = '<div class="mesin-group"><h3>' + title + '</h3><div class="mesin-list">';
+  list.forEach(function(m) {
+    // Menambahkan data-harga
+    html += '<button class="mesin-btn" data-mesin="' + m.mesinId + '" data-harga="' + m.harga + '">' + m.mesinId + '<span class="harga">Rp ' + m.harga + '</span></button>';
+  });
+  html += '</div></div>';
+  return html;
+}
+
+function startAutoRefresh() {
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+  autoRefreshTimer = setInterval(function() {
+    const sectionPilih = document.getElementById("sectionPilih");
+    if (sectionPilih && sectionPilih.classList.contains("active") && tabTerlihat()) {
+      loadMesin(true);
+    }
+  }, REFRESH_INTERVAL_MS);
+}
+
+function stopAutoRefresh() {
+  if (autoRefreshTimer) {
+    clearInterval(autoRefreshTimer);
+    autoRefreshTimer = null;
+  }
+}
+
+// ==========================================
+// 2. PILIH MESIN & MINTA URL DOKU KE NETLIFY FUNCTION
+// ==========================================
+async function pilihMesin(mesinId, harga) {
+  stopAutoRefresh();
+  document.querySelectorAll(".mesin-btn").forEach(b => b.disabled = true);
+
+  document.getElementById("sectionPilih").classList.remove("active");
+  document.getElementById("sectionBayar").classList.add("active");
+  document.getElementById("mesinDipilih").textContent = mesinId;
+  
+  document.getElementById("loadingQris").style.display = "block";
+  document.getElementById("qrWrapper").style.display = "none";
+  document.getElementById("nominalBox").style.display = "none";
+  document.getElementById("warningBox").style.display = "none";
+  document.getElementById("btnBukaDoku").style.display = "none";
+  document.getElementById("qrError").style.display = "none";
+
+  let mesinBersih = mesinId.replace("-", ""); 
+  let invoice = mesinBersih + Date.now(); 
+  currentInvoice = invoice;
+
+  try {
+    // MEMANGGIL NETLIFY FUNCTION (Bukan Tunnel lagi)
+    let proxyUrl = `/.netlify/functions/get-qris?mesinId=${mesinId}&amount=${harga}&invoice=${invoice}`;
+    const res = await fetch(proxyUrl);
+    
+    if (!res.ok) throw new Error("Server merespon dengan status " + res.status);
+    
+    const data = await res.json();
+
+    if (data.status === "success" && data.payment_url) {
+      dokuPaymentUrl = data.payment_url;
+      
+      document.getElementById("loadingQris").style.display = "none";
+      document.getElementById("qrWrapper").style.display = "block";
+      document.getElementById("dokuIframe").src = dokuPaymentUrl;
+      
+      document.getElementById("nominalBox").style.display = "block";
+      document.getElementById("nominalBayar").textContent = harga;
+      document.getElementById("warningBox").style.display = "block";
+      document.getElementById("btnBukaDoku").style.display = "block";
+
+      startCountdown(BATAS_RESERVASI_DETIK);
+      startStatusPolling(mesinId, currentInvoice);
+
+    } else {
+      throw new Error(data.message || "Gagal mendapatkan link pembayaran dari DOKU.");
+    }
+  } catch (err) {
+    document.getElementById("loadingQris").style.display = "none";
+    document.getElementById("qrError").style.display = "block";
+    document.getElementById("qrError").innerHTML = "❌ Gagal: " + err.message + "<br>Pastikan Netlify Function sudah ter-deploy dengan benar.";
+  }
+}
+
+function bukaDiTabBaru() {
+  if (dokuPaymentUrl) window.open(dokuPaymentUrl, '_blank');
+}
+
+// ==========================================
+// 3. STATUS POLLING & COUNTDOWN
+// ==========================================
+function startCountdown(detik) {
+  clearInterval(countdownInterval);
+  let sisa = detik;
+  document.getElementById("countdown").style.display = "block";
+  
+  function update() {
+    const menit = Math.floor(sisa / 60);
+    const detik2 = sisa % 60;
+    document.getElementById("countdown").textContent = "⏱️ Sisa waktu: " + menit + ":" + (detik2 < 10 ? "0" : "") + detik2;
+    
+    if (sisa <= 0) {
+      clearInterval(countdownInterval);
+      alert("⏰ Waktu habis. Silakan pilih ulang.");
+      resetKePilih();
+      return;
+    }
+    sisa--;
+  }
+  update();
+  countdownInterval = setInterval(update, 1000);
+}
+
+function startStatusPolling(mesinId, invoice) {
+  if (pollingInterval) clearInterval(pollingInterval);
+  
+  pollingInterval = setInterval(async function() {
+    if (!tabTerlihat()) return;
+
+    try {
+      const res = await fetch(WORKER_URL + "?action=getStatusMesin&_=" + Date.now());
+      const status = await res.json();
+      const mesin = status.find(m => m.mesinId === mesinId);
+      
+      if (mesin && mesin.status === "PAID" && mesin.invoice === invoice) {
+        clearInterval(pollingInterval);
+        clearInterval(countdownInterval);
+        
+        document.getElementById("sectionBayar").classList.remove("active");
+        document.getElementById("sectionSukses").classList.add("active");
+        document.getElementById("mesinSukses").textContent = mesinId;
+        
+        startAutoReturn();
+      }
+    } catch (e) {}
+  }, 3000);
+}
+
+function startAutoReturn() {
+  clearInterval(autoReturnInterval);
+  let sisa = AUTO_RETURN_DETIK;
+  document.getElementById("autoCountdown").textContent = sisa;
+
+  autoReturnInterval = setInterval(function() {
+    sisa--;
+    if (sisa <= 0) {
+      clearInterval(autoReturnInterval);
+      resetKePilih();
+      return;
+    }
+    document.getElementById("autoCountdown").textContent = sisa;
+  }, 1000);
+}
+
+// ==========================================
+// 4. RESET / BATAL
+// ==========================================
+function resetKePilih() {
+  clearInterval(countdownInterval);
+  clearInterval(autoReturnInterval);
+  if (pollingInterval) clearInterval(pollingInterval);
+  
+  currentInvoice = null;
+  autoPilihDone = false; 
+  dokuPaymentUrl = "";
+  
+  document.getElementById("dokuIframe").src = "about:blank";
+  
+  document.getElementById("sectionBayar").classList.remove("active");
+  document.getElementById("sectionSukses").classList.remove("active");
+  document.getElementById("sectionPilih").classList.add("active");
+  document.getElementById("countdown").style.display = "none";
+  
+  lastMesinHash = "";
+  loadMesin();
+  startAutoRefresh();
+}
+
+document.addEventListener("visibilitychange", function() {
+  if (!document.hidden) {
+    const sectionPilih = document.getElementById("sectionPilih");
+    if (sectionPilih && sectionPilih.classList.contains("active")) {
+      loadMesin(true);
+    }
+  }
+});
+
+// Inisialisasi Awal
+loadMesin();
+startAutoRefresh();
+</script>
+</body>
+</html>
