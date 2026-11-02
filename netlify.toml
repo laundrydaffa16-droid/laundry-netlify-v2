@@ -1,6 +1,0 @@
-[build]
-  base = "laundry-netlify-v2"
-  publish = "."
-
-[functions]
-  directory = "functions"
